@@ -42,7 +42,7 @@ Secura est un outil open-source **d’audit Linux en lecture seule** destiné au
 ```bash
 git clone https://github.com/medaey/secura.git
 cd secura
-chmod +x secura.sh
+chmod +x Secura.sh
 ```
 
 ---
@@ -52,7 +52,7 @@ chmod +x secura.sh
 ### Scan rapide
 
 ```bash
-sudo ./secura.sh scan
+sudo ./Secura.sh scan
 ```
 
 Affiche l’état actuel du serveur :
@@ -68,7 +68,7 @@ Affiche l’état actuel du serveur :
 ### Générer un rapport Markdown
 
 ```bash
-sudo ./secura.sh report
+sudo ./Secura.sh report
 ```
 
 Crée un fichier `secureinfra-report.md` lisible et prêt à partager.
