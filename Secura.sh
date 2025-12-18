@@ -9,9 +9,15 @@ set -euo pipefail
 VERSION="0.1.0"
 
 # --------- Helpers ---------
+WARNINGS=()
+OKS=()
+
+add_warn() { WARNINGS+=("$1"); }
+add_ok()   { OKS+=("$1"); }
+
 info()  { echo -e "[INFO] $1"; }
-ok()    { echo -e "[OK]   $1"; }
-warn()  { echo -e "[WARN] $1"; }
+ok()    { echo -e "[OK]   $1"; add_ok "$1"; }
+warn()  { echo -e "[WARN] $1"; add_warn "$1"; }
 error() { echo -e "[ERR]  $1"; exit 1; }
 
 require_root() {
@@ -29,6 +35,7 @@ check_os() {
   if [[ -f /etc/os-release ]]; then
     . /etc/os-release
     info "OS: $NAME $VERSION_ID"
+    ok "OS detected: $NAME $VERSION_ID"
   else
     warn "Unable to detect OS"
   fi
@@ -38,6 +45,7 @@ check_uptime() {
   local up
   up=$(uptime -p 2>/dev/null || true)
   info "Uptime: ${up:-unknown}"
+  ok "System uptime: ${up:-unknown}"
 }
 
 check_ssh() {
@@ -55,6 +63,7 @@ check_ssh() {
     fi
 
     info "SSH port: $port"
+    ok "SSH port: $port"
   else
     warn "SSH configuration not found"
   fi
@@ -90,6 +99,7 @@ check_open_ports() {
     local ports
     ports=$(ss -tuln | awk 'NR>1 {print $5}' | sed 's/.*://' | sort -n | uniq | wc -l)
     info "Open listening ports: $ports"
+    ok "$ports open listening ports detected"
   else
     warn "Cannot check open ports (ss not available)"
   fi
@@ -109,13 +119,56 @@ check_updates() {
 
 # --------- Report ---------
 report_markdown() {
-  local file="secureinfra-report.md"
+  local file="secura-report.md"
   {
-    echo "# SecureInfra Report"
+    echo "# Secura Report"
     echo
-    date
+    echo "Generated on: $(date)"
+    echo "Host: $(uname -n)"
+    echo "OS: $(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '\"')"
+    echo "Kernel: $(uname -r)"
     echo
-    uname -a
+    echo "---"
+    echo
+    echo "## Executive Summary"
+    if [[ ${#WARNINGS[@]} -eq 0 ]]; then
+      echo "✅ No major issues detected."
+    else
+      echo "⚠️ ${#WARNINGS[@]} warning(s) detected requiring attention."
+    fi
+    echo
+    echo "---"
+    echo
+    echo "## Findings"
+    echo "### ✅ OK"
+    if [[ ${#OKS[@]} -eq 0 ]]; then
+      echo "- None"
+    else
+      for ok in "${OKS[@]}"; do
+        echo "- $ok"
+      done
+    fi
+    echo
+    echo "### ⚠️ Warnings"
+    if [[ ${#WARNINGS[@]} -eq 0 ]]; then
+      echo "- None"
+    else
+      for warn in "${WARNINGS[@]}"; do
+        echo "- $warn"
+      done
+    fi
+    echo
+    echo "---"
+    echo
+    echo "## Recommendations"
+    for warn in "${WARNINGS[@]}"; do
+      case "$warn" in
+        *firewall*) echo "- Install and enable a firewall (ufw, nftables, or firewalld)." ;;
+        *root*) echo "- Disable SSH root login and use key-based authentication." ;;
+        *sudo*) echo "- Review sudo users, remove unnecessary privileges." ;;
+        *) echo "- Review: $warn" ;;
+      esac
+    done
   } > "$file"
 
   info "Report generated: $file"
