@@ -125,7 +125,7 @@ report_markdown() {
 usage() {
   echo "SecureInfra v$VERSION"
   echo
-  echo "Usage: $0 scan | report"
+  echo "Usage: $0 scan"
 }
 
 main() {
@@ -133,13 +133,14 @@ main() {
 
   case "${1:-}" in
     scan)
-      check_os
-      check_uptime
-      check_ssh
-      check_sudo_users
-      check_firewall
-      check_open_ports
-      check_updates
+        check_os
+        check_uptime
+        check_ssh
+        check_sudo_users
+        check_firewall
+        check_open_ports
+        check_updates
+        report_markdown   # ajoute cette ligne pour g  n  rer automatiquement le rapport
       ;;
     report)
       report_markdown
